@@ -12,7 +12,7 @@ def load_data(file):
         df_diversity.csv
         standards_working.csv
     """
-    df = pd.DataFrame(pd.read_csv('/Users/ericaashe/Dropbox/Training/capstone/col/streamlit/' + file)) 
+    df = pd.DataFrame(pd.read_csv('data_files/' + file)) 
     return(df)
 
 def intersection(lst1, lst2):
@@ -21,6 +21,49 @@ def intersection(lst1, lst2):
 
 @st.cache_data
 def find_schools(event1, event2, team, PR1, PR2, mode, df, standards):
+    show_options = {
+        5: 'All schools',
+        4: 'Recruit numeric',
+        3: 'Walk On numeric', 
+        2: 'Tryout numeric', 
+        1: 'Unattainable Schools'
+    }   
+
+    if mode == 5:
+        schools = standards['College']
+    elif mode == 1:
+        merged = pd.merge(standards, df, how='inner', on='College')
+        schools1 = merged[(merged['Recruit numeric'] < PR1) & 
+                    (merged['Team'] == team) &
+                    (merged['Event'] == event1)]['College']
+        schools2 = merged[(merged['Recruit numeric'] < PR2) & 
+                    (merged['Team'] == team) &
+                    (merged['Event'] == event2)]['College']
+        schools = intersection(list(schools1), list(schools2))
+    elif (mode == 2) | (mode == 3):   # WALK ON    OR   TRYOUT
+        merged = pd.merge(standards, df, how='inner', on='College')
+        schools1 = merged[(merged[show_options[mode]] > PR1) & 
+                    (merged[show_options[mode+1]] < PR1) & 
+                    (merged['Team'] == team) &
+                    (merged['Event'] == event1)]['College']
+        schools2 = merged[(merged[show_options[mode]] > PR2) & 
+                    (merged[show_options[mode+1]] < PR2) & 
+                    (merged['Team'] == team) &
+                    (merged['Event'] == event2)]['College']
+        schools = intersection(list(schools1), list(schools2))
+    elif mode == 4:     # RECRUIT
+        merged = pd.merge(standards, df, how='inner', on='College')
+        schools1 = merged[(merged[show_options[mode]] > PR1) & 
+                    (merged['Team'] == team) &
+                   (merged['Event'] == event1)]['College']
+        schools2 = merged[(merged[show_options[mode]] > PR2) & 
+                   (merged['Team'] == team) &
+                   (merged['Event'] == event2)]['College']
+        schools = intersection(list(schools1), list(schools2)) 
+    return(schools)
+
+@st.cache_data
+def find_schools_separate(event1, event2, team, PR1, PR2, mode, df, standards):
     show_options = {
         5: 'All schools',
         4: 'Recruit numeric',
@@ -38,8 +81,11 @@ def find_schools(event1, event2, team, PR1, PR2, mode, df, standards):
         schools2 = merged[(merged['Recruit numeric'] < PR2) & 
                     (merged['Team'] == team) &
                     (merged['Event'] == event2)]['College']
-        schools = intersection(list(schools1), list(schools2))
-    elif (mode == 2) | (mode == 3):   # try out
+        st.write(show_options[mode] + ' schools are for ' + event1 + ' are: ')
+        st.write(schools1)
+        st.write(show_options[mode] + ' schools are for ' + event2 + ' are ')
+        st.write(schools2)
+    elif (mode == 2) | (mode == 3):   # WALK ON    OR   TRYOUT
         merged = pd.merge(standards, df, how='inner', on='College')
         schools1 = merged[(merged[show_options[mode]] > PR1) & 
                     (merged[show_options[mode+1]] < PR1) & 
@@ -49,8 +95,11 @@ def find_schools(event1, event2, team, PR1, PR2, mode, df, standards):
                     (merged[show_options[mode+1]] < PR2) & 
                     (merged['Team'] == team) &
                     (merged['Event'] == event2)]['College']
-        schools = intersection(list(schools1), list(schools2))
-    elif mode == 4:
+        st.write(show_options[mode] + ' schools are for ' + event1 + ' are: ')
+        st.write(schools1)
+        st.write(show_options[mode] + ' schools are for ' + event2 + ' are ')
+        st.write(schools2)
+    elif mode == 4:     # RECRUIT
         merged = pd.merge(standards, df, how='inner', on='College')
         schools1 = merged[(merged[show_options[mode]] > PR1) & 
                     (merged['Team'] == team) &
@@ -58,14 +107,22 @@ def find_schools(event1, event2, team, PR1, PR2, mode, df, standards):
         schools2 = merged[(merged[show_options[mode]] > PR2) & 
                    (merged['Team'] == team) &
                    (merged['Event'] == event2)]['College']
-        schools = intersection(list(schools1), list(schools2)) 
-    return(schools)
+        st.write(show_options[mode] + ' schools are for ' + event1 + ' are: ')
+        st.write(schools1)
+        st.write(show_options[mode] + ' schools are for ' + event2 + ' are ')
+        st.write(schools2)
 
 @st.cache_data
-def refine_info(schools, what_next):
-    # merged = pd.merge(standards, df, how='inner', on='College')
+def refine_info(schools, what_next, mode):
+    show_options = {
+        5: 'For all schools, ',
+        4: 'For your recruit schools, ',
+        3: 'For your walk on schools, ', 
+        2: 'For your tryout school, ', 
+        1: 'For your unattainable schools, '
+    }   
     if what_next == 'Merit Aid Information':
-        st.write('For the set of schools you have chosen, these schools also provide at least 10% of students (with no need) merit aid their first year:')
+        st.write(show_options[mode] + ' these schools also provide at least 10% of students (with no need) merit aid their first year:')
         st.write(schools[schools[
             'percent of students with no need who rec merit schol (1st year)'] > 10]
                 [['College', 
@@ -76,7 +133,7 @@ def refine_info(schools, what_next):
                    'percent full-pay',
                    'number undergraduates.1']])
     elif what_next == 'School Environment Information':
-        st.write('For the set of schools you have chosen, here is some information about the environment of each school:')
+        st.write(show_options[mode] + ' here is some information about the environment of each school:')
         st.write(schools[['College',
                   'number undergraduates.1', 
                   'Type', 
@@ -93,7 +150,7 @@ def refine_info(schools, what_next):
                   '4-yr grad rate', 
                   'Female ' ]])
     elif what_next == 'Admissions Information':
-        st.write('Here is some information about admissions for each school in the set you selected:')
+        st.write(show_options[mode] + ' here is some information about admissions for each school in the set you selected:')
         st.write(schools[[
                 'College', 
                 'Total apps',
@@ -110,6 +167,9 @@ def refine_info(schools, what_next):
                 'Overall admit rate (percent)',
                 'percent of all other apps who enroll',
                 'Offered spot on WL']])
+    elif what_next == 'Separate list of schools for each event':
+        st.write(event1, event2, team, PR1, PR2, mode)
+        find_schools_separate(event1, event2, team, PR1, PR2, mode, df, standards)
 
 def mapSchools(schools):
     import altair as alt

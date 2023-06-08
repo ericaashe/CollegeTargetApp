@@ -113,16 +113,16 @@ show_mode = st.radio(
     #horizontal=True,
     )   
 
-### should add a function here where we can calculate a different number than PR based on the year in school and the event
+### add a function here where we can calculate a different number than PR based on the year in school and the event
 
 s1 = f.find_schools(e1, e2, team, PR1, PR2, show_mode, df, standards)
 
 f.get_chart(df[df['College'].isin(s1)])
 schools = df[df['College'].isin(s1)]
 
-next_options=['Admissions Information', 'Merit Aid Information', 'School Environment Information']
+next_options=['Admissions Information', 'Merit Aid Information', 'School Environment Information']#, 'Separate list of schools for each event']
 
 what_next = st.selectbox('What information would you like to see about the above schools?', next_options, key = 'what_next')
 if 'what_next' not in st.session_state:
     st.session_state.what_next = what_next
-f.refine_info(schools, what_next)
+f.refine_info(schools, what_next, show_mode)
