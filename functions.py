@@ -237,7 +237,7 @@ def get_chart(schools):
             opacity = 'Overall admit rate (percent)',
             tooltip=['College', 'Overall admit rate (percent)', 'USNews Rank', 'Locale'],
         )
-       .properties(width=550, height=300)
+       .properties(width=550, height=400)
         .add_selection(brush)
         .transform_filter(click)
     )
